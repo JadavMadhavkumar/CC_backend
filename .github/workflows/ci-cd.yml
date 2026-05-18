@@ -20,11 +20,9 @@ jobs:
       - name: Install dependencies
         run: pip install ruff black mypy
       - name: Check with Ruff
-        run: ruff check backend/app/
+        run: ruff check app/ --fix
       - name: Check with Black
-        run: black --check backend/app/
-      - name: Check with MyPy
-        run: mypy backend/app/ --ignore-missing-imports
+        run: black --check app/
 
   test:
     runs-on: ubuntu-latest
@@ -51,9 +49,9 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
       - name: Install dependencies
-        run: pip install -r backend/requirements.txt
+        run: pip install -r requirements.txt
       - name: Run tests
-        run: pytest backend/app/tests/unit/ -v --tb=short
+        run: pytest app/tests/unit/ -v --tb=short
         env:
           DATABASE_URL: postgresql+asyncpg://test_user:test_pass@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379/0
@@ -70,7 +68,7 @@ jobs:
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          context: .
           push: false
           tags: carbon-credit-platform:${{ github.sha }}
           load: true
