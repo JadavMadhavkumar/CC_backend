@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carbon-credit-api
+  labels:
+    app: carbon-credit-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: carbon-credit-api
+  template:
+    metadata:
+      labels:
+        app: carbon-credit-api
+    spec:
+      containers:
+      - name: api
+        image: carbon-credit-platform:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: carbon-credit-secrets
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: carbon-credit-config
+              key: redis-url
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: carbon-credit-secrets
+              key: secret-key
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: carbon-credit-api
+spec:
+  selector:
+    app: carbon-credit-api
+  ports:
+  - port: 80
+    targetPort: 8000
+  type: ClusterIP
