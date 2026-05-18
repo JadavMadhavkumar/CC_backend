@@ -11,24 +11,20 @@ from app.core.config import settings
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.security import SecurityHeadersMiddleware
 from app.core.database import init_db
-from app.core.logging import configure_logging, get_logger
 from app.api.v1.router import api_router
-
-configure_logging()
-logger = get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
-    logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
+    print(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
 
     await init_db()
-    logger.info("Database initialized")
+    print("Database initialized")
 
     yield
 
-    logger.info("Shutting down application")
+    print("Shutting down application")
 
 
 app = FastAPI(
