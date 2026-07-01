@@ -4,13 +4,13 @@ Pytest configuration and fixtures for testing.
 
 import asyncio
 from typing import AsyncGenerator
+from uuid import uuid4
 
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
-from app.core.config import settings
 from app.core.database import Base, get_db
 from app.main import app
 
@@ -19,6 +19,7 @@ TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 test_engine = create_async_engine(
     TEST_DATABASE_URL,
     echo=False,
+    connect_args={"check_same_thread": False},
 )
 
 test_async_session_maker = async_sessionmaker(
@@ -41,6 +42,25 @@ async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 app.dependency_overrides[get_db] = override_get_db
+
+
+@pytest_asyncio.fixture
+async def auth_headers(client: AsyncClient) -> dict:
+    """Register user and login to get auth headers."""
+    user_data = {
+        "email": f"auth_{uuid4().hex[:8]}@example.com",
+        "username": f"authuser_{uuid4().hex[:8]}",
+        "password": "testpass123",
+        "full_name": "Auth Test User",
+    }
+    await client.post("/api/v1/auth/register", json=user_data)
+
+    response = await client.post(
+        "/api/v1/auth/login",
+        data={"username": user_data["email"], "password": user_data["password"]},
+    )
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -67,10 +87,7 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 @pytest_asyncio.fixture(scope="function")
 async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """Create test client."""
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
 
@@ -81,7 +98,7 @@ def sample_user_data() -> dict:
         "email": "test@example.com",
         "username": "testuser",
         "password": "testpass123",
-        "full_name": "Test User"
+        "full_name": "Test User",
     }
 
 
@@ -96,7 +113,7 @@ def sample_waste_data() -> dict:
         "collection_date": "2024-01-15T10:00:00Z",
         "quantity": 1000.0,
         "unit": "kg",
-        "processing_method": "recycling"
+        "processing_method": "recycling",
     }
 
 
@@ -112,5 +129,5 @@ def sample_biochar_data() -> dict:
         "biochar_quantity": 300.0,
         "biochar_unit": "kg",
         "biochar_yield_percentage": 30.0,
-        "carbon_content": 70.0
+        "carbon_content": 70.0,
     }

@@ -29,8 +29,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         current_time = time.time()
 
         self.request_counts[client_ip] = [
-            req_time for req_time in self.request_counts[client_ip]
-            if current_time - req_time < 60
+            req_time for req_time in self.request_counts[client_ip] if current_time - req_time < 60
         ]
 
         if len(self.request_counts[client_ip]) >= self.requests_per_minute:
@@ -38,8 +37,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 status_code=429,
                 content={
                     "detail": "Rate limit exceeded. Please try again later.",
-                    "retry_after": 60
-                }
+                    "retry_after": 60,
+                },
             )
 
         self.request_counts[client_ip].append(current_time)

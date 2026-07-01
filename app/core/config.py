@@ -3,17 +3,14 @@ Core configuration settings for the Carbon Credit Platform.
 Loads settings from environment variables with validation.
 """
 
-from typing import Any, Literal
-from pydantic import Field, PostgresDsn
+from typing import Literal
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
     )
 
     # Application
@@ -30,7 +27,7 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = Field(
         default="postgresql+asyncpg://carbon_user:carbon_pass@localhost:5432/carbon_credits",
-        validation_alias="DATABASE_URL"
+        validation_alias="DATABASE_URL",
     )
     DATABASE_POOL_SIZE: int = 20
     DATABASE_MAX_OVERFLOW: int = 10
@@ -56,12 +53,10 @@ class Settings(BaseSettings):
 
     # Celery
     CELERY_BROKER_URL: str = Field(
-        default="redis://localhost:6379/1",
-        validation_alias="CELERY_BROKER_URL"
+        default="redis://localhost:6379/1", validation_alias="CELERY_BROKER_URL"
     )
     CELERY_RESULT_BACKEND: str = Field(
-        default="redis://localhost:6379/2",
-        validation_alias="CELERY_RESULT_BACKEND"
+        default="redis://localhost:6379/2", validation_alias="CELERY_RESULT_BACKEND"
     )
 
     # Logging

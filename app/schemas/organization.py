@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class OrganizationBase(BaseModel):
     """Base organization schema."""
+
     name: str = Field(..., min_length=1, max_length=255)
     slug: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = None
@@ -29,11 +30,13 @@ class OrganizationBase(BaseModel):
 
 class OrganizationCreate(OrganizationBase):
     """Organization creation schema."""
+
     pass
 
 
 class OrganizationUpdate(BaseModel):
     """Organization update schema."""
+
     name: Optional[str] = None
     description: Optional[str] = None
     address: Optional[str] = None
@@ -51,6 +54,7 @@ class OrganizationUpdate(BaseModel):
 
 class OrganizationInDB(OrganizationBase):
     """Organization in database schema."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: str
@@ -66,6 +70,7 @@ class OrganizationInDB(OrganizationBase):
 
 class OrganizationResponse(OrganizationBase):
     """Organization response schema."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: str
@@ -81,6 +86,7 @@ class OrganizationResponse(OrganizationBase):
 
 class OrganizationStats(BaseModel):
     """Organization statistics schema."""
+
     total_carbon_credits: float
     total_waste_processed: float
     total_emissions_reduced: float

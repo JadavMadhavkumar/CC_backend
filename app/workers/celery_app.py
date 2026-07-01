@@ -10,9 +10,7 @@ celery_app = Celery(
     "carbon_credit_platform",
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
-    include=[
-        "app.workers.tasks"
-    ]
+    include=["app.workers.tasks"],
 )
 
 celery_app.conf.update(

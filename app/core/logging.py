@@ -2,18 +2,15 @@
 Logging configuration using structlog for structured logging.
 """
 
-import sys
 from typing import Any
 
 import structlog
-from structlog.types import EventDict, Processor
+from structlog.types import EventDict
 
 from app.core.config import settings
 
 
-def add_log_level(
-    logger: Any, method_name: str, event_dict: EventDict
-) -> EventDict:
+def add_log_level(logger: Any, method_name: str, event_dict: EventDict) -> EventDict:
     """Add log level to event dict."""
     event_dict["level"] = method_name
     return event_dict
@@ -35,9 +32,7 @@ def configure_logging() -> None:
     if settings.LOG_FORMAT == "json":
         processors.append(structlog.processors.JSONRenderer())
     else:
-        processors.append(
-            structlog.dev.ConsoleRenderer(colors=True)
-        )
+        processors.append(structlog.dev.ConsoleRenderer(colors=True))
 
     structlog.configure(
         processors=processors,

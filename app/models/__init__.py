@@ -12,7 +12,6 @@ from app.models.carbon_credit import CarbonCredit, CarbonCreditTransaction
 from app.models.emission import EmissionRecord
 from app.models.verification import VerificationRequest, AuditLog
 
-
 __all__ = [
     "Base",
     "User",

@@ -11,13 +11,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.endpoints.auth import get_current_user
 from app.core.database import get_db
 from app.core.logging import get_logger
+from app.core.security import has_permission
 from app.schemas.user import UserResponse
 from app.schemas.waste import (
     WasteRecordCreate,
     WasteRecordUpdate,
     WasteRecordResponse,
     WasteCalculationRequest,
-    WasteCalculationResponse
+    WasteCalculationResponse,
 )
 from app.services.waste import WasteService
 from app.services.carbon_credit import CarbonCreditService
@@ -31,20 +32,15 @@ logger = get_logger(__name__)
 async def create_waste_record(
     waste_data: WasteRecordCreate,
     current_user: UserResponse = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Create a new waste record with carbon credit calculation."""
     try:
         waste_record = await WasteService.create_waste_record(
-            db,
-            waste_data,
-            created_by_id=UUID(current_user.id)
+            db, waste_data, created_by_id=UUID(current_user.id)
         )
 
-        carbon_credit = await CarbonCreditService.generate_credit_from_waste(
-            db,
-            waste_record
-        )
+        await CarbonCreditService.generate_credit_from_waste(db, waste_record)
 
         await db.commit()
 
@@ -55,7 +51,7 @@ async def create_waste_record(
         logger.error(f"Failed to create waste record: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create waste record"
+            detail="Failed to create waste record",
         )
 
 
@@ -66,7 +62,7 @@ async def get_waste_records(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     current_user: UserResponse = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Get waste records with pagination and filters."""
     org_id = UUID(organization_id) if organization_id else None
@@ -75,11 +71,7 @@ async def get_waste_records(
         org_id = UUID(current_user.organization_id) if current_user.organization_id else None
 
     waste_records = await WasteService.get_waste_records(
-        db,
-        organization_id=org_id,
-        waste_type=waste_type,
-        skip=skip,
-        limit=limit
+        db, organization_id=org_id, waste_type=waste_type, skip=skip, limit=limit
     )
 
     return [WasteRecordResponse.model_validate(w) for w in waste_records]
@@ -89,16 +81,13 @@ async def get_waste_records(
 async def get_waste_record(
     waste_id: UUID,
     current_user: UserResponse = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Get waste record by ID."""
     waste_record = await WasteService.get_waste_record_by_id(db, waste_id)
 
     if not waste_record:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Waste record not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Waste record not found")
 
     return WasteRecordResponse.model_validate(waste_record)
 
@@ -108,22 +97,15 @@ async def update_waste_record(
     waste_id: UUID,
     waste_data: WasteRecordUpdate,
     current_user: UserResponse = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Update waste record."""
     update_dict = waste_data.model_dump(exclude_unset=True)
 
-    waste_record = await WasteService.update_waste_record(
-        db,
-        waste_id,
-        **update_dict
-    )
+    waste_record = await WasteService.update_waste_record(db, waste_id, **update_dict)
 
     if not waste_record:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Waste record not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Waste record not found")
 
     await db.commit()
     return WasteRecordResponse.model_validate(waste_record)
@@ -131,8 +113,7 @@ async def update_waste_record(
 
 @router.post("/calculate", response_model=WasteCalculationResponse)
 async def calculate_waste_credits(
-    calc_request: WasteCalculationRequest,
-    current_user: UserResponse = Depends(get_current_user)
+    calc_request: WasteCalculationRequest, current_user: UserResponse = Depends(get_current_user)
 ):
     """Calculate carbon credits for waste without saving."""
     result = formula_engine.calculate_waste_credit(
@@ -141,7 +122,7 @@ async def calculate_waste_credits(
         quantity=calc_request.quantity,
         unit=calc_request.unit,
         processing_method=calc_request.processing_method,
-        region=calc_request.region
+        region=calc_request.region,
     )
 
     return WasteCalculationResponse(
@@ -151,5 +132,5 @@ async def calculate_waste_credits(
         project_emissions=result.project_emissions,
         emissions_reduced=result.emissions_reduced,
         carbon_credits_generated=result.carbon_credits_generated,
-        emission_factors_used=result.emission_factors_used
+        emission_factors_used=result.emission_factors_used,
     )

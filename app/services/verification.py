@@ -28,7 +28,7 @@ class VerificationService:
         entity_type: str,
         entity_id: UUID,
         verification_type: str,
-        priority: str = "normal"
+        priority: str = "normal",
     ) -> VerificationRequest:
         """Create a new verification request."""
         verification = VerificationRequest(
@@ -37,7 +37,7 @@ class VerificationService:
             entity_id=entity_id,
             verification_type=verification_type,
             priority=priority,
-            status="pending"
+            status="pending",
         )
 
         db.add(verification)
@@ -53,7 +53,7 @@ class VerificationService:
         organization_id: Optional[UUID] = None,
         status: Optional[str] = None,
         skip: int = 0,
-        limit: int = 100
+        limit: int = 100,
     ) -> list[VerificationRequest]:
         """Get verification requests with filters."""
         query = select(VerificationRequest)
@@ -72,8 +72,7 @@ class VerificationService:
 
     @staticmethod
     async def get_verification_request_by_id(
-        db: AsyncSession,
-        verification_id: UUID
+        db: AsyncSession, verification_id: UUID
     ) -> Optional[VerificationRequest]:
         """Get verification request by ID."""
         result = await db.execute(
@@ -90,12 +89,10 @@ class VerificationService:
         data_accuracy_score: float,
         completeness_score: float,
         conclusions: str,
-        approved_credits: float
+        approved_credits: float,
     ) -> Optional[VerificationRequest]:
         """Approve a verification request."""
-        verification = await VerificationService.get_verification_request_by_id(
-            db, verification_id
-        )
+        verification = await VerificationService.get_verification_request_by_id(db, verification_id)
 
         if not verification:
             return None
@@ -126,12 +123,10 @@ class VerificationService:
         verification_id: UUID,
         verified_by: UUID,
         findings: str,
-        rejected_credits: float
+        rejected_credits: float,
     ) -> Optional[VerificationRequest]:
         """Reject a verification request."""
-        verification = await VerificationService.get_verification_request_by_id(
-            db, verification_id
-        )
+        verification = await VerificationService.get_verification_request_by_id(db, verification_id)
 
         if not verification:
             return None
@@ -151,16 +146,11 @@ class VerificationService:
 
     @staticmethod
     async def _update_entity_verification(
-        db: AsyncSession,
-        entity_type: str,
-        entity_id: UUID,
-        verification_id: UUID
+        db: AsyncSession, entity_type: str, entity_id: UUID, verification_id: UUID
     ) -> None:
         """Update the entity's verification status."""
         if entity_type == "waste":
-            result = await db.execute(
-                select(WasteRecord).where(WasteRecord.id == entity_id)
-            )
+            result = await db.execute(select(WasteRecord).where(WasteRecord.id == entity_id))
             entity = result.scalar_one_or_none()
             if entity:
                 entity.is_verified = True
@@ -168,9 +158,7 @@ class VerificationService:
                 entity.verification_id = verification_id
 
         elif entity_type == "biochar":
-            result = await db.execute(
-                select(BiocharRecord).where(BiocharRecord.id == entity_id)
-            )
+            result = await db.execute(select(BiocharRecord).where(BiocharRecord.id == entity_id))
             entity = result.scalar_one_or_none()
             if entity:
                 entity.is_verified = True
@@ -178,9 +166,7 @@ class VerificationService:
                 entity.verification_id = verification_id
 
         elif entity_type == "carbon_credit":
-            result = await db.execute(
-                select(CarbonCredit).where(CarbonCredit.id == entity_id)
-            )
+            result = await db.execute(select(CarbonCredit).where(CarbonCredit.id == entity_id))
             entity = result.scalar_one_or_none()
             if entity:
                 entity.verification_level = "verified"

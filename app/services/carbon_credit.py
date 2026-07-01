@@ -11,12 +11,11 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
-from app.formula_engine.base import formula_engine, CalculationInput
+from app.formula_engine.base import formula_engine
 from app.models.carbon_credit import CarbonCredit
 from app.models.waste import WasteRecord
 from app.models.biochar import BiocharRecord
 from app.models.organization import Organization
-from app.schemas.carbon_credit import CarbonCreditCreate
 
 logger = get_logger(__name__)
 
@@ -26,8 +25,7 @@ class CarbonCreditService:
 
     @staticmethod
     async def generate_credit_from_waste(
-        db: AsyncSession,
-        waste_record: WasteRecord
+        db: AsyncSession, waste_record: WasteRecord
     ) -> CarbonCredit:
         """Generate carbon credit from waste record."""
         calculation_result = formula_engine.calculate_waste_credit(
@@ -35,10 +33,12 @@ class CarbonCreditService:
             plastic_type=waste_record.plastic_type,
             quantity=waste_record.quantity,
             unit=waste_record.unit,
-            processing_method=waste_record.processing_method
+            processing_method=waste_record.processing_method,
         )
 
-        serial_number = f"CC-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+        serial_number = (
+            f"CC-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+        )
 
         carbon_credit = CarbonCredit(
             organization_id=waste_record.organization_id,
@@ -56,7 +56,7 @@ class CarbonCreditService:
             project_emissions=calculation_result.project_emissions,
             emissions_reduced=calculation_result.emissions_reduced,
             start_date=waste_record.collection_date,
-            verification_status="pending"
+            verification_status="pending",
         )
 
         db.add(carbon_credit)
@@ -71,25 +71,25 @@ class CarbonCreditService:
         await db.refresh(carbon_credit)
 
         logger.info(
-            f"Carbon credit generated from waste: {serial_number}",
-            quantity=carbon_credit.quantity
+            f"Carbon credit generated from waste: {serial_number}", quantity=carbon_credit.quantity
         )
 
         return carbon_credit
 
     @staticmethod
     async def generate_credit_from_biochar(
-        db: AsyncSession,
-        biochar_record: BiocharRecord
+        db: AsyncSession, biochar_record: BiocharRecord
     ) -> CarbonCredit:
         """Generate carbon credit from biochar record."""
         calculation_result = formula_engine.calculate_biochar_credit(
             feedstock_quantity=biochar_record.feedstock_quantity,
             biochar_yield=biochar_record.biochar_yield_percentage,
-            carbon_content=biochar_record.carbon_content
+            carbon_content=biochar_record.carbon_content,
         )
 
-        serial_number = f"BC-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+        serial_number = (
+            f"BC-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+        )
 
         carbon_credit = CarbonCredit(
             organization_id=biochar_record.organization_id,
@@ -105,14 +105,18 @@ class CarbonCreditService:
             emissions_reduced=calculation_result.emissions_reduced,
             emissions_removed=calculation_result.emissions_removed,
             start_date=biochar_record.production_date,
-            verification_status="pending"
+            verification_status="pending",
         )
 
         db.add(carbon_credit)
 
         biochar_record.carbon_credit_generated = calculation_result.carbon_credits_generated
-        biochar_record.soil_improvement_factor = calculation_result.emission_factors_used.get("EF_soilimprovement", 0.05)
-        biochar_record.carbon_captured = calculation_result.calculation_details.get("carbon_captured_kg", 0)
+        biochar_record.soil_improvement_factor = calculation_result.emission_factors_used.get(
+            "EF_soilimprovement", 0.05
+        )
+        biochar_record.carbon_captured = calculation_result.calculation_details.get(
+            "carbon_captured_kg", 0
+        )
         biochar_record.calculation_formula = calculation_result.formula_code
 
         await db.flush()
@@ -120,24 +124,20 @@ class CarbonCreditService:
 
         logger.info(
             f"Carbon credit generated from biochar: {serial_number}",
-            quantity=carbon_credit.quantity
+            quantity=carbon_credit.quantity,
         )
 
         return carbon_credit
 
     @staticmethod
     async def get_credits_by_organization(
-        db: AsyncSession,
-        organization_id: UUID,
-        skip: int = 0,
-        limit: int = 100
+        db: AsyncSession, organization_id: UUID, skip: int = 0, limit: int = 100
     ) -> list[CarbonCredit]:
         """Get carbon credits by organization."""
         result = await db.execute(
             select(CarbonCredit)
             .where(
-                CarbonCredit.organization_id == organization_id,
-                CarbonCredit.deleted_at.is_(None)
+                CarbonCredit.organization_id == organization_id, CarbonCredit.deleted_at.is_(None)
             )
             .order_by(CarbonCredit.created_at.desc())
             .offset(skip)
@@ -146,38 +146,28 @@ class CarbonCreditService:
         return list(result.scalars().all())
 
     @staticmethod
-    async def get_credit_by_id(
-        db: AsyncSession,
-        credit_id: UUID
-    ) -> Optional[CarbonCredit]:
+    async def get_credit_by_id(db: AsyncSession, credit_id: UUID) -> Optional[CarbonCredit]:
         """Get carbon credit by ID."""
         result = await db.execute(
             select(CarbonCredit).where(
-                CarbonCredit.id == credit_id,
-                CarbonCredit.deleted_at.is_(None)
+                CarbonCredit.id == credit_id, CarbonCredit.deleted_at.is_(None)
             )
         )
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def get_credit_by_serial(
-        db: AsyncSession,
-        serial_number: str
-    ) -> Optional[CarbonCredit]:
+    async def get_credit_by_serial(db: AsyncSession, serial_number: str) -> Optional[CarbonCredit]:
         """Get carbon credit by serial number."""
         result = await db.execute(
             select(CarbonCredit).where(
-                CarbonCredit.serial_number == serial_number,
-                CarbonCredit.deleted_at.is_(None)
+                CarbonCredit.serial_number == serial_number, CarbonCredit.deleted_at.is_(None)
             )
         )
         return result.scalar_one_or_none()
 
     @staticmethod
     async def retire_credit(
-        db: AsyncSession,
-        credit_id: UUID,
-        reason: str
+        db: AsyncSession, credit_id: UUID, reason: str
     ) -> Optional[CarbonCredit]:
         """Retire carbon credit."""
         credit = await CarbonCreditService.get_credit_by_id(db, credit_id)
@@ -196,20 +186,13 @@ class CarbonCreditService:
         return credit
 
     @staticmethod
-    async def update_organization_stats(
-        db: AsyncSession,
-        organization_id: UUID
-    ) -> None:
+    async def update_organization_stats(db: AsyncSession, organization_id: UUID) -> None:
         """Update organization carbon credit statistics."""
         result = await db.execute(
-            select(
-                func.sum(CarbonCredit.quantity),
-                func.count(CarbonCredit.id)
-            )
-            .where(
+            select(func.sum(CarbonCredit.quantity), func.count(CarbonCredit.id)).where(
                 CarbonCredit.organization_id == organization_id,
                 CarbonCredit.deleted_at.is_(None),
-                CarbonCredit.status == "issued"
+                CarbonCredit.status == "issued",
             )
         )
         total_credits, credits_count = result.one()
@@ -224,9 +207,7 @@ class CarbonCreditService:
             await db.flush()
 
         logger.info(
-            f"Organization stats updated",
-            org_id=str(organization_id),
-            total_credits=total_credits
+            "Organization stats updated", org_id=str(organization_id), total_credits=total_credits
         )
 
 
