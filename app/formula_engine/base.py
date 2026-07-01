@@ -11,9 +11,8 @@ Based on formulas defined in formula.md:
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import structlog
 
@@ -22,6 +21,7 @@ logger = structlog.get_logger(__name__)
 
 class FormulaCategory(Enum):
     """Categories of carbon calculation formulas."""
+
     GENERAL = "general"
     PLASTIC_WASTE = "plastic_waste"
     AGRICULTURAL_WASTE = "agricultural_waste"
@@ -32,6 +32,7 @@ class FormulaCategory(Enum):
 
 class FormulaType(Enum):
     """Types of formulas based on disposal method."""
+
     # Plastic Waste
     PLASTIC_RECYCLING = "plastic_recycling"
     PET_RECYCLING = "pet_recycling"
@@ -71,6 +72,7 @@ class FormulaType(Enum):
 @dataclass
 class CalculationInput:
     """Input parameters for carbon calculation."""
+
     quantity: float
     unit: str = "kg"
     waste_type: Optional[str] = None
@@ -90,14 +92,15 @@ class CalculationInput:
 @dataclass
 class CalculationResult:
     """Result of carbon calculation."""
+
     formula_code: str
     formula_name: str
     formula_category: FormulaCategory
     baseline_emissions: float
     project_emissions: float
     emissions_reduced: float
-    emissions_removed: float = 0.0
     carbon_credits_generated: float
+    emissions_removed: float = 0.0
     unit: str = "tCO2e"
     emission_factors_used: dict[str, float] = field(default_factory=dict)
     calculation_details: dict[str, Any] = field(default_factory=dict)
@@ -118,17 +121,12 @@ class FormulaBase(ABC):
 
     @abstractmethod
     def calculate(
-        self,
-        input_params: CalculationInput,
-        emission_factors: dict[str, float]
+        self, input_params: CalculationInput, emission_factors: dict[str, float]
     ) -> CalculationResult:
         """Execute the formula calculation."""
         pass
 
-    def validate_input(
-        self,
-        input_params: CalculationInput
-    ) -> list[str]:
+    def validate_input(self, input_params: CalculationInput) -> list[str]:
         """Validate input parameters."""
         errors = []
         if input_params.quantity <= 0:
@@ -159,9 +157,7 @@ class GeneralCarbonCreditFormula(FormulaBase):
         self.formula_string = "CC = (E_baseline - E_project) × Q / 1000"
 
     def calculate(
-        self,
-        input_params: CalculationInput,
-        emission_factors: dict[str, float]
+        self, input_params: CalculationInput, emission_factors: dict[str, float]
     ) -> CalculationResult:
         """Execute general carbon credit calculation."""
         errors = self.validate_input(input_params)
@@ -175,7 +171,7 @@ class GeneralCarbonCreditFormula(FormulaBase):
                 emissions_reduced=0.0,
                 carbon_credits_generated=0.0,
                 is_valid=False,
-                validation_errors=errors
+                validation_errors=errors,
             )
 
         ef_baseline = emission_factors.get("EF_baseline", 0.0)
@@ -194,15 +190,12 @@ class GeneralCarbonCreditFormula(FormulaBase):
             project_emissions=project_emissions,
             emissions_reduced=emissions_reduced,
             carbon_credits_generated=max(0, carbon_credits),
-            emission_factors_used={
-                "EF_baseline": ef_baseline,
-                "EF_project": ef_project
-            },
+            emission_factors_used={"EF_baseline": ef_baseline, "EF_project": ef_project},
             calculation_details={
                 "formula": self.formula_string,
                 "quantity": input_params.quantity,
-                "unit": input_params.unit
-            }
+                "unit": input_params.unit,
+            },
         )
 
 
@@ -258,9 +251,7 @@ class PlasticWasteRecyclingFormula(FormulaBase):
         self.category = FormulaCategory.PLASTIC_WASTE
 
     def calculate(
-        self,
-        input_params: CalculationInput,
-        emission_factors: dict[str, float]
+        self, input_params: CalculationInput, emission_factors: dict[str, float]
     ) -> CalculationResult:
         """Execute plastic waste carbon credit calculation."""
         errors = self.validate_input(input_params)
@@ -274,7 +265,7 @@ class PlasticWasteRecyclingFormula(FormulaBase):
                 emissions_reduced=0.0,
                 carbon_credits_generated=0.0,
                 is_valid=False,
-                validation_errors=errors
+                validation_errors=errors,
             )
 
         plastic_type = input_params.plastic_type.lower() if input_params.plastic_type else "plastic"
@@ -292,7 +283,9 @@ class PlasticWasteRecyclingFormula(FormulaBase):
         elif formula_type == FormulaType.BIOPLASTIC_WASTE:
             ef_project_key = "EF_composting"
 
-        ef_baseline = emission_factors.get(ef_baseline_key, emission_factors.get("EF_landfill", 6.0))
+        ef_baseline = emission_factors.get(
+            ef_baseline_key, emission_factors.get("EF_landfill", 6.0)
+        )
         ef_project = emission_factors.get(ef_project_key, emission_factors.get("EF_recycling", 0.5))
 
         baseline_emissions = ef_baseline * input_params.quantity
@@ -308,16 +301,13 @@ class PlasticWasteRecyclingFormula(FormulaBase):
             project_emissions=project_emissions,
             emissions_reduced=emissions_reduced,
             carbon_credits_generated=max(0, carbon_credits),
-            emission_factors_used={
-                ef_baseline_key: ef_baseline,
-                ef_project_key: ef_project
-            },
+            emission_factors_used={ef_baseline_key: ef_baseline, ef_project_key: ef_project},
             calculation_details={
                 "formula": self.FORMULA_TEMPLATES.get(formula_type, ""),
                 "plastic_type": plastic_type,
                 "quantity": input_params.quantity,
-                "unit": input_params.unit
-            }
+                "unit": input_params.unit,
+            },
         )
 
 
@@ -374,9 +364,7 @@ class AgriculturalWasteFormula(FormulaBase):
         self.category = FormulaCategory.AGRICULTURAL_WASTE
 
     def calculate(
-        self,
-        input_params: CalculationInput,
-        emission_factors: dict[str, float]
+        self, input_params: CalculationInput, emission_factors: dict[str, float]
     ) -> CalculationResult:
         """Execute agricultural waste carbon credit calculation."""
         errors = self.validate_input(input_params)
@@ -390,23 +378,32 @@ class AgriculturalWasteFormula(FormulaBase):
                 emissions_reduced=0.0,
                 carbon_credits_generated=0.0,
                 is_valid=False,
-                validation_errors=errors
+                validation_errors=errors,
             )
 
         waste_type = input_params.waste_type.lower() if input_params.waste_type else "agricultural"
         formula_type = self.WASTE_TYPE_MAPPING.get(waste_type, FormulaType.AGRI_WASTE)
 
-        if formula_type in [FormulaType.SUGARCANE_BAGASSE, FormulaType.BIOGAS,
-                            FormulaType.BIOMASS_POWER, FormulaType.COCONUT_SHELL]:
+        if formula_type in [
+            FormulaType.SUGARCANE_BAGASSE,
+            FormulaType.BIOGAS,
+            FormulaType.BIOMASS_POWER,
+            FormulaType.COCONUT_SHELL,
+        ]:
             energy = input_params.energy_generated or input_params.quantity
-            ef_baseline = emission_factors.get("EF_coal", emission_factors.get("EF_openburning", 2.5))
-            ef_project = emission_factors.get(f"EF_{waste_type}energy",
-                                               emission_factors.get("EF_sustainablemanagement", 0.3))
+            ef_baseline = emission_factors.get(
+                "EF_coal", emission_factors.get("EF_openburning", 2.5)
+            )
+            ef_project = emission_factors.get(
+                f"EF_{waste_type}energy", emission_factors.get("EF_sustainablemanagement", 0.3)
+            )
             baseline_emissions = ef_baseline * energy
             project_emissions = ef_project * energy
         elif formula_type in [FormulaType.ANIMAL_MANURE, FormulaType.PALM_OIL_WASTE]:
             ch4_baseline = emission_factors.get("CH4_baseline", 10.0)
-            ch4_project = emission_factors.get("CH4_biogas", emission_factors.get("CH4_capture", 1.0))
+            ch4_project = emission_factors.get(
+                "CH4_biogas", emission_factors.get("CH4_capture", 1.0)
+            )
             gwp = input_params.gwp
             baseline_emissions = ch4_baseline * gwp * input_params.quantity / 1000
             project_emissions = ch4_project * gwp * input_params.quantity / 1000
@@ -454,8 +451,8 @@ class AgriculturalWasteFormula(FormulaBase):
                 "formula": self.FORMULA_TEMPLATES.get(formula_type, ""),
                 "waste_type": waste_type,
                 "quantity": input_params.quantity,
-                "unit": input_params.unit
-            }
+                "unit": input_params.unit,
+            },
         )
 
 
@@ -479,9 +476,7 @@ class BiocharFormula(FormulaBase):
         self.formula_string = "CC = (C_captured + EF_soilimprovement) × W / 1000"
 
     def calculate(
-        self,
-        input_params: CalculationInput,
-        emission_factors: dict[str, float]
+        self, input_params: CalculationInput, emission_factors: dict[str, float]
     ) -> CalculationResult:
         """Execute biochar carbon credit calculation."""
         errors = self.validate_input(input_params)
@@ -495,7 +490,7 @@ class BiocharFormula(FormulaBase):
                 emissions_reduced=0.0,
                 carbon_credits_generated=0.0,
                 is_valid=False,
-                validation_errors=errors
+                validation_errors=errors,
             )
 
         biochar_yield = input_params.biochar_yield_percentage or 30.0
@@ -519,17 +514,15 @@ class BiocharFormula(FormulaBase):
             emissions_reduced=soil_carbon_enhancement,
             emissions_removed=emissions_removed,
             carbon_credits_generated=max(0, carbon_credits),
-            emission_factors_used={
-                "EF_soilimprovement": soil_improvement_factor
-            },
+            emission_factors_used={"EF_soilimprovement": soil_improvement_factor},
             calculation_details={
                 "formula": self.formula_string,
                 "biochar_yield_percentage": biochar_yield,
                 "carbon_content_percentage": carbon_content,
                 "biochar_quantity": biochar_quantity,
                 "carbon_captured_kg": carbon_captured,
-                "soil_carbon_enhancement": soil_carbon_enhancement
-            }
+                "soil_carbon_enhancement": soil_carbon_enhancement,
+            },
         )
 
 
@@ -620,11 +613,7 @@ class FormulaEngine:
         self._formulas[formula.code] = formula
         logger.info(f"Registered formula: {formula.code}")
 
-    def register_emission_factors(
-        self,
-        region: str,
-        factors: dict[str, float]
-    ) -> None:
+    def register_emission_factors(self, region: str, factors: dict[str, float]) -> None:
         """Register emission factors for a specific region."""
         self._emission_factors[region] = factors
         logger.info(f"Registered emission factors for region: {region}")
@@ -633,10 +622,7 @@ class FormulaEngine:
         """Get a formula by code."""
         return self._formulas.get(code)
 
-    def get_emission_factors(
-        self,
-        region: Optional[str] = None
-    ) -> dict[str, float]:
+    def get_emission_factors(self, region: Optional[str] = None) -> dict[str, float]:
         """Get emission factors for a region."""
         if region and region in self._emission_factors:
             default_factors = self._emission_factors.get("default", {})
@@ -645,10 +631,7 @@ class FormulaEngine:
         return self._emission_factors.get("default", {})
 
     def calculate(
-        self,
-        formula_code: str,
-        input_params: CalculationInput,
-        region: Optional[str] = None
+        self, formula_code: str, input_params: CalculationInput, region: Optional[str] = None
     ) -> CalculationResult:
         """Execute a calculation using a specific formula."""
         formula = self.get_formula(formula_code)
@@ -663,7 +646,7 @@ class FormulaEngine:
                 emissions_reduced=0.0,
                 carbon_credits_generated=0.0,
                 is_valid=False,
-                validation_errors=[f"Formula not found: {formula_code}"]
+                validation_errors=[f"Formula not found: {formula_code}"],
             )
 
         emission_factors = self.get_emission_factors(region)
@@ -673,7 +656,7 @@ class FormulaEngine:
             f"Calculation completed: {formula_code}",
             carbon_credits=result.carbon_credits_generated,
             emissions_reduced=result.emissions_reduced,
-            is_valid=result.is_valid
+            is_valid=result.is_valid,
         )
 
         return result
@@ -685,7 +668,7 @@ class FormulaEngine:
         quantity: float,
         unit: str,
         processing_method: str,
-        region: Optional[str] = None
+        region: Optional[str] = None,
     ) -> CalculationResult:
         """Calculate carbon credits for waste processing."""
         formula_code = "CC_PLASTIC_WASTE"
@@ -697,7 +680,7 @@ class FormulaEngine:
             unit=unit,
             waste_type=waste_type,
             plastic_type=plastic_type,
-            processing_method=processing_method
+            processing_method=processing_method,
         )
 
         return self.calculate(formula_code, input_params, region)
@@ -707,13 +690,13 @@ class FormulaEngine:
         feedstock_quantity: float,
         biochar_yield: float,
         carbon_content: float,
-        region: Optional[str] = None
+        region: Optional[str] = None,
     ) -> CalculationResult:
         """Calculate carbon credits for biochar production."""
         input_params = CalculationInput(
             quantity=feedstock_quantity,
             biochar_yield_percentage=biochar_yield,
-            carbon_content=carbon_content
+            carbon_content=carbon_content,
         )
 
         return self.calculate("CC_BIOCHAR", input_params, region)
@@ -726,7 +709,7 @@ class FormulaEngine:
                 "name": formula.name,
                 "category": formula.category.value,
                 "description": formula.description,
-                "formula_string": formula.formula_string
+                "formula_string": formula.formula_string,
             }
             for code, formula in self._formulas.items()
         ]

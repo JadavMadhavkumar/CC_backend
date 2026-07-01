@@ -3,13 +3,14 @@ Pydantic schemas for biochar record management.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, ConfigDict
 
 
 class BiocharRecordBase(BaseModel):
     """Base biochar record schema."""
+
     production_date: datetime
     feedstock_type: str
     feedstock_quantity: float = Field(..., gt=0)
@@ -33,11 +34,13 @@ class BiocharRecordBase(BaseModel):
 
 class BiocharRecordCreate(BiocharRecordBase):
     """Biochar record creation schema."""
+
     organization_id: str
 
 
 class BiocharRecordUpdate(BaseModel):
     """Biochar record update schema."""
+
     production_date: Optional[datetime] = None
     feedstock_type: Optional[str] = None
     feedstock_quantity: Optional[float] = None
@@ -54,6 +57,7 @@ class BiocharRecordUpdate(BaseModel):
 
 class BiocharRecordInDB(BiocharRecordBase):
     """Biochar record in database schema."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: str
@@ -74,6 +78,7 @@ class BiocharRecordInDB(BiocharRecordBase):
 
 class BiocharRecordResponse(BiocharRecordBase):
     """Biochar record response schema."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: str
@@ -89,6 +94,7 @@ class BiocharRecordResponse(BiocharRecordBase):
 
 class BiocharCalculationRequest(BaseModel):
     """Request schema for biochar carbon credit calculation."""
+
     feedstock_type: str
     feedstock_quantity: float = Field(..., gt=0)
     feedstock_unit: str = "kg"
@@ -100,10 +106,11 @@ class BiocharCalculationRequest(BaseModel):
 
 class BiocharCalculationResponse(BaseModel):
     """Response schema for biochar carbon credit calculation."""
+
     formula_code: str
     formula_name: str
     carbon_captured: float
     soil_improvement_factor: float
     total_carbon_credits: float
     unit: str = "tCO2e"
-    calculations: dict[str, float]
+    calculations: dict[str, Any]

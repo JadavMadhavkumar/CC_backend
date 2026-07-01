@@ -34,7 +34,7 @@ class AuthService:
         password: str,
         full_name: Optional[str] = None,
         role: str = "user",
-        organization_id: Optional[UUID] = None
+        organization_id: Optional[UUID] = None,
     ) -> User:
         """Register a new user."""
         hashed_password = get_password_hash(password)
@@ -47,7 +47,7 @@ class AuthService:
             role=role,
             organization_id=organization_id,
             is_active=True,
-            is_verified=False
+            is_verified=False,
         )
 
         db.add(user)
@@ -58,17 +58,10 @@ class AuthService:
         return user
 
     @staticmethod
-    async def authenticate_user(
-        db: AsyncSession,
-        email: str,
-        password: str
-    ) -> Optional[User]:
+    async def authenticate_user(db: AsyncSession, email: str, password: str) -> Optional[User]:
         """Authenticate user by email and password."""
         result = await db.execute(
-            select(User).where(
-                User.email == email,
-                User.deleted_at.is_(None)
-            )
+            select(User).where(User.email == email, User.deleted_at.is_(None))
         )
         user = result.scalar_one_or_none()
 
@@ -93,12 +86,10 @@ class AuthService:
         access_token: str,
         refresh_token: Optional[str] = None,
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
     ) -> UserSession:
         """Create a new user session."""
-        expires_at = datetime.now(timezone.utc) + timedelta(
-            minutes=30
-        )
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=30)
 
         session = UserSession(
             user_id=user.id,
@@ -107,7 +98,7 @@ class AuthService:
             ip_address=ip_address,
             user_agent=user_agent,
             expires_at=expires_at,
-            is_active=True
+            is_active=True,
         )
 
         db.add(session)
@@ -119,8 +110,7 @@ class AuthService:
 
     @staticmethod
     async def refresh_access_token(
-        db: AsyncSession,
-        refresh_token: str
+        db: AsyncSession, refresh_token: str
     ) -> Optional[tuple[str, str]]:
         """Refresh access token using refresh token."""
         try:
@@ -133,10 +123,7 @@ class AuthService:
                 return None
 
             result = await db.execute(
-                select(User).where(
-                    User.id == UUID(user_id),
-                    User.deleted_at.is_(None)
-                )
+                select(User).where(User.id == UUID(user_id), User.deleted_at.is_(None))
             )
             user = result.scalar_one_or_none()
 
@@ -150,9 +137,7 @@ class AuthService:
                 data={"sub": str(user.id), "email": user.email}
             )
 
-            await AuthService.create_session(
-                db, user, new_access_token, new_refresh_token
-            )
+            await AuthService.create_session(db, user, new_access_token, new_refresh_token)
 
             return new_access_token, new_refresh_token
 
@@ -161,53 +146,33 @@ class AuthService:
             return None
 
     @staticmethod
-    async def logout_session(
-        db: AsyncSession,
-        token: str
-    ) -> bool:
+    async def logout_session(db: AsyncSession, token: str) -> bool:
         """Logout user by invalidating session."""
         result = await db.execute(
-            select(UserSession).where(
-                UserSession.token == token,
-                UserSession.is_active == True
-            )
+            select(UserSession).where(UserSession.token == token, UserSession.is_active)
         )
         session = result.scalar_one_or_none()
 
         if session:
             session.is_active = False
             await db.flush()
-            logger.info(f"Session invalidated for token")
+            logger.info("Session invalidated for token")
             return True
 
         return False
 
     @staticmethod
-    async def get_user_by_email(
-        db: AsyncSession,
-        email: str
-    ) -> Optional[User]:
+    async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
         """Get user by email."""
         result = await db.execute(
-            select(User).where(
-                User.email == email,
-                User.deleted_at.is_(None)
-            )
+            select(User).where(User.email == email, User.deleted_at.is_(None))
         )
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def get_user_by_id(
-        db: AsyncSession,
-        user_id: UUID
-    ) -> Optional[User]:
+    async def get_user_by_id(db: AsyncSession, user_id: UUID) -> Optional[User]:
         """Get user by ID."""
-        result = await db.execute(
-            select(User).where(
-                User.id == user_id,
-                User.deleted_at.is_(None)
-            )
-        )
+        result = await db.execute(select(User).where(User.id == user_id, User.deleted_at.is_(None)))
         return result.scalar_one_or_none()
 
 

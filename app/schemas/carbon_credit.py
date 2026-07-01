@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class CarbonCreditBase(BaseModel):
     """Base carbon credit schema."""
+
     credit_type: str
     category: str
     sub_category: Optional[str] = None
@@ -28,6 +29,7 @@ class CarbonCreditBase(BaseModel):
 
 class CarbonCreditCreate(CarbonCreditBase):
     """Carbon credit creation schema."""
+
     organization_id: str
     baseline_emissions: float
     project_emissions: float
@@ -37,6 +39,7 @@ class CarbonCreditCreate(CarbonCreditBase):
 
 class CarbonCreditUpdate(BaseModel):
     """Carbon credit update schema."""
+
     status: Optional[str] = None
     verification_level: Optional[str] = None
     verification_id: Optional[str] = None
@@ -52,6 +55,7 @@ class CarbonCreditUpdate(BaseModel):
 
 class CarbonCreditInDB(CarbonCreditBase):
     """Carbon credit in database schema."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: str
@@ -74,6 +78,7 @@ class CarbonCreditInDB(CarbonCreditBase):
 
 class CarbonCreditResponse(CarbonCreditBase):
     """Carbon credit response schema."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: str
@@ -93,6 +98,7 @@ class CarbonCreditResponse(CarbonCreditBase):
 
 class CarbonCreditTransfer(BaseModel):
     """Carbon credit transfer schema."""
+
     to_organization_id: str
     quantity: float = Field(..., gt=0)
     price: Optional[float] = None
@@ -102,12 +108,14 @@ class CarbonCreditTransfer(BaseModel):
 
 class CarbonCreditRetire(BaseModel):
     """Carbon credit retirement schema."""
+
     quantity: float = Field(..., gt=0)
     reason: str
 
 
 class CarbonCreditStats(BaseModel):
     """Carbon credit statistics schema."""
+
     total_credits: float
     pending_credits: float
     issued_credits: float

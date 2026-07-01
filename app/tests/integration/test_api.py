@@ -40,10 +40,7 @@ class TestAuthenticationAPI:
     @pytest.mark.asyncio
     async def test_register_user(self, client: AsyncClient, sample_user_data: dict):
         """Test user registration."""
-        response = await client.post(
-            "/api/v1/auth/register",
-            json=sample_user_data
-        )
+        response = await client.post("/api/v1/auth/register", json=sample_user_data)
 
         assert response.status_code == 201
         data = response.json()
@@ -55,10 +52,7 @@ class TestAuthenticationAPI:
         """Test registration with duplicate email fails."""
         await client.post("/api/v1/auth/register", json=sample_user_data)
 
-        response = await client.post(
-            "/api/v1/auth/register",
-            json=sample_user_data
-        )
+        response = await client.post("/api/v1/auth/register", json=sample_user_data)
 
         assert response.status_code == 400
 
@@ -67,15 +61,15 @@ class TestWasteAPI:
     """Tests for waste management endpoints."""
 
     @pytest.mark.asyncio
-    async def test_get_waste_records_empty(self, client: AsyncClient):
+    async def test_get_waste_records_empty(self, client: AsyncClient, auth_headers: dict):
         """Test getting waste records returns empty list."""
-        response = await client.get("/api/v1/waste/")
+        response = await client.get("/api/v1/waste/", headers=auth_headers)
 
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
     @pytest.mark.asyncio
-    async def test_calculate_waste_credits(self, client: AsyncClient):
+    async def test_calculate_waste_credits(self, client: AsyncClient, auth_headers: dict):
         """Test waste credit calculation endpoint."""
         calc_data = {
             "waste_type": "plastic",
@@ -84,12 +78,11 @@ class TestWasteAPI:
             "unit": "kg",
             "processing_method": "recycling",
             "disposal_method_baseline": "landfill",
-            "disposal_method_project": "recycling"
+            "disposal_method_project": "recycling",
         }
 
         response = await client.post(
-            "/api/v1/waste/calculate",
-            json=calc_data
+            "/api/v1/waste/calculate", json=calc_data, headers=auth_headers
         )
 
         assert response.status_code == 200
@@ -102,15 +95,15 @@ class TestBiocharAPI:
     """Tests for biochar endpoints."""
 
     @pytest.mark.asyncio
-    async def test_get_biochar_records_empty(self, client: AsyncClient):
+    async def test_get_biochar_records_empty(self, client: AsyncClient, auth_headers: dict):
         """Test getting biochar records returns empty list."""
-        response = await client.get("/api/v1/biochar/")
+        response = await client.get("/api/v1/biochar/", headers=auth_headers)
 
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
     @pytest.mark.asyncio
-    async def test_calculate_biochar_credits(self, client: AsyncClient):
+    async def test_calculate_biochar_credits(self, client: AsyncClient, auth_headers: dict):
         """Test biochar credit calculation endpoint."""
         calc_data = {
             "feedstock_type": "wood",
@@ -118,12 +111,11 @@ class TestBiocharAPI:
             "feedstock_unit": "kg",
             "biochar_yield_percentage": 30.0,
             "carbon_content": 70.0,
-            "apply_soil_improvement": True
+            "apply_soil_improvement": True,
         }
 
         response = await client.post(
-            "/api/v1/biochar/calculate",
-            json=calc_data
+            "/api/v1/biochar/calculate", json=calc_data, headers=auth_headers
         )
 
         assert response.status_code == 200
@@ -136,17 +128,17 @@ class TestCarbonCreditAPI:
     """Tests for carbon credit endpoints."""
 
     @pytest.mark.asyncio
-    async def test_get_carbon_credits_empty(self, client: AsyncClient):
+    async def test_get_carbon_credits_empty(self, client: AsyncClient, auth_headers: dict):
         """Test getting carbon credits returns empty list."""
-        response = await client.get("/api/v1/carbon-credits/")
+        response = await client.get("/api/v1/carbon-credits/", headers=auth_headers)
 
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
     @pytest.mark.asyncio
-    async def test_get_carbon_credits_stats(self, client: AsyncClient):
+    async def test_get_carbon_credits_stats(self, client: AsyncClient, auth_headers: dict):
         """Test getting carbon credit statistics."""
-        response = await client.get("/api/v1/carbon-credits/stats/summary")
+        response = await client.get("/api/v1/carbon-credits/stats/summary", headers=auth_headers)
 
         assert response.status_code == 200
         data = response.json()

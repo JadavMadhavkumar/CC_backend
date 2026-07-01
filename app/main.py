@@ -33,7 +33,7 @@ app = FastAPI(
     description="Production-grade Carbon Credit Management Platform",
     docs_url=settings.DOCS_URL,
     openapi_url=settings.OPENAPI_URL,
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -56,7 +56,7 @@ async def health_check():
     return {
         "status": "healthy",
         "version": settings.APP_VERSION,
-        "environment": settings.ENVIRONMENT
+        "environment": settings.ENVIRONMENT,
     }
 
 
@@ -66,7 +66,7 @@ async def root():
     return {
         "message": "Carbon Credit Platform API",
         "version": settings.APP_VERSION,
-        "docs": settings.DOCS_URL
+        "docs": settings.DOCS_URL,
     }
 
 
@@ -78,5 +78,5 @@ if __name__ == "__main__":
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.RELOAD,
-        log_level=settings.LOG_LEVEL.lower()
+        log_level=settings.LOG_LEVEL.lower(),
     )

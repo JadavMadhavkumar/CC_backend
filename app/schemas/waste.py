@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class WasteRecordBase(BaseModel):
     """Base waste record schema."""
+
     waste_type: str
     plastic_type: Optional[str] = None
     source: str
@@ -27,11 +28,13 @@ class WasteRecordBase(BaseModel):
 
 class WasteRecordCreate(WasteRecordBase):
     """Waste record creation schema."""
+
     organization_id: str
 
 
 class WasteRecordUpdate(BaseModel):
     """Waste record update schema."""
+
     waste_type: Optional[str] = None
     plastic_type: Optional[str] = None
     source: Optional[str] = None
@@ -52,6 +55,7 @@ class WasteRecordUpdate(BaseModel):
 
 class WasteRecordInDB(WasteRecordBase):
     """Waste record in database schema."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: str
@@ -70,6 +74,7 @@ class WasteRecordInDB(WasteRecordBase):
 
 class WasteRecordResponse(WasteRecordBase):
     """Waste record response schema."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: str
@@ -87,6 +92,7 @@ class WasteRecordResponse(WasteRecordBase):
 
 class WasteCalculationRequest(BaseModel):
     """Request schema for waste carbon credit calculation."""
+
     waste_type: str
     plastic_type: Optional[str] = None
     quantity: float = Field(..., gt=0)
@@ -99,6 +105,7 @@ class WasteCalculationRequest(BaseModel):
 
 class WasteCalculationResponse(BaseModel):
     """Response schema for waste carbon credit calculation."""
+
     formula_code: str
     formula_name: str
     baseline_emissions: float

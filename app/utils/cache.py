@@ -23,9 +23,7 @@ class RedisCache:
         """Connect to Redis."""
         if not self._client:
             self._client = await aioredis.from_url(
-                settings.REDIS_URL,
-                encoding="utf-8",
-                decode_responses=True
+                settings.REDIS_URL, encoding="utf-8", decode_responses=True
             )
             logger.info("Connected to Redis")
 
@@ -50,12 +48,7 @@ class RedisCache:
             logger.error(f"Cache get error: {e}")
             return None
 
-    async def set(
-        self,
-        key: str,
-        value: Any,
-        ttl: Optional[int] = None
-    ) -> bool:
+    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
         """Set value in cache."""
         if not self._client:
             await self.connect()

@@ -2,7 +2,6 @@
 Organization management API endpoints.
 """
 
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -17,7 +16,7 @@ from app.schemas.organization import (
     OrganizationCreate,
     OrganizationUpdate,
     OrganizationResponse,
-    OrganizationStats
+    OrganizationStats,
 )
 from app.models.organization import Organization
 from sqlalchemy import select, func
@@ -30,22 +29,18 @@ logger = get_logger(__name__)
 async def create_organization(
     org_data: OrganizationCreate,
     current_user: UserResponse = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Create a new organization."""
     if not has_permission(current_user.role, "organization:write"):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Insufficient permissions"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions"
         )
 
-    existing = await db.execute(
-        select(Organization).where(Organization.slug == org_data.slug)
-    )
+    existing = await db.execute(select(Organization).where(Organization.slug == org_data.slug))
     if existing.scalar_one_or_none():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Organization slug already exists"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Organization slug already exists"
         )
 
     org = Organization(
@@ -80,7 +75,7 @@ async def get_organizations(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     current_user: UserResponse = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Get all organizations."""
     result = await db.execute(
@@ -98,22 +93,16 @@ async def get_organizations(
 async def get_organization(
     org_id: UUID,
     current_user: UserResponse = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Get organization by ID."""
     result = await db.execute(
-        select(Organization).where(
-            Organization.id == org_id,
-            Organization.deleted_at.is_(None)
-        )
+        select(Organization).where(Organization.id == org_id, Organization.deleted_at.is_(None))
     )
     org = result.scalar_one_or_none()
 
     if not org:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Organization not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
 
     return OrganizationResponse.model_validate(org)
 
@@ -123,28 +112,21 @@ async def update_organization(
     org_id: UUID,
     org_data: OrganizationUpdate,
     current_user: UserResponse = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Update organization."""
     if not has_permission(current_user.role, "organization:write"):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Insufficient permissions"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions"
         )
 
     result = await db.execute(
-        select(Organization).where(
-            Organization.id == org_id,
-            Organization.deleted_at.is_(None)
-        )
+        select(Organization).where(Organization.id == org_id, Organization.deleted_at.is_(None))
     )
     org = result.scalar_one_or_none()
 
     if not org:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Organization not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
 
     update_dict = org_data.model_dump(exclude_unset=True)
     for key, value in update_dict.items():
@@ -161,22 +143,16 @@ async def update_organization(
 async def get_organization_stats(
     org_id: UUID,
     current_user: UserResponse = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """Get organization statistics."""
     result = await db.execute(
-        select(Organization).where(
-            Organization.id == org_id,
-            Organization.deleted_at.is_(None)
-        )
+        select(Organization).where(Organization.id == org_id, Organization.deleted_at.is_(None))
     )
     org = result.scalar_one_or_none()
 
     if not org:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Organization not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
 
     from app.models.waste import WasteRecord
     from app.models.biochar import BiocharRecord
@@ -185,29 +161,25 @@ async def get_organization_stats(
 
     waste_count = await db.scalar(
         select(func.count(WasteRecord.id)).where(
-            WasteRecord.organization_id == org_id,
-            WasteRecord.deleted_at.is_(None)
+            WasteRecord.organization_id == org_id, WasteRecord.deleted_at.is_(None)
         )
     )
 
     biochar_count = await db.scalar(
         select(func.count(BiocharRecord.id)).where(
-            BiocharRecord.organization_id == org_id,
-            BiocharRecord.deleted_at.is_(None)
+            BiocharRecord.organization_id == org_id, BiocharRecord.deleted_at.is_(None)
         )
     )
 
     credit_count = await db.scalar(
         select(func.count(CarbonCredit.id)).where(
-            CarbonCredit.organization_id == org_id,
-            CarbonCredit.deleted_at.is_(None)
+            CarbonCredit.organization_id == org_id, CarbonCredit.deleted_at.is_(None)
         )
     )
 
     pending_verifications = await db.scalar(
         select(func.count(VerificationRequest.id)).where(
-            VerificationRequest.organization_id == org_id,
-            VerificationRequest.status == "pending"
+            VerificationRequest.organization_id == org_id, VerificationRequest.status == "pending"
         )
     )
 
@@ -218,5 +190,5 @@ async def get_organization_stats(
         waste_records_count=waste_count or 0,
         biochar_records_count=biochar_count or 0,
         carbon_credits_count=credit_count or 0,
-        pending_verifications=pending_verifications or 0
+        pending_verifications=pending_verifications or 0,
     )

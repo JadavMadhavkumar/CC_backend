@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
@@ -23,9 +23,7 @@ class WasteService:
 
     @staticmethod
     async def create_waste_record(
-        db: AsyncSession,
-        waste_data: WasteRecordCreate,
-        created_by_id: Optional[UUID] = None
+        db: AsyncSession, waste_data: WasteRecordCreate, created_by_id: Optional[UUID] = None
     ) -> WasteRecord:
         """Create a new waste record and calculate carbon credits."""
         waste_record = WasteRecord(
@@ -44,7 +42,7 @@ class WasteService:
             latitude=waste_data.latitude,
             longitude=waste_data.longitude,
             verification_status="pending",
-            created_by_id=created_by_id
+            created_by_id=created_by_id,
         )
 
         db.add(waste_record)
@@ -55,7 +53,7 @@ class WasteService:
             plastic_type=waste_data.plastic_type,
             quantity=waste_data.quantity,
             unit=waste_data.unit,
-            processing_method=waste_data.processing_method
+            processing_method=waste_data.processing_method,
         )
 
         waste_record.carbon_credit_generated = calculation_result.carbon_credits_generated
@@ -77,10 +75,10 @@ class WasteService:
         await db.refresh(waste_record)
 
         logger.info(
-            f"Waste record created",
+            "Waste record created",
             waste_id=str(waste_record.id),
             quantity=waste_record.quantity,
-            carbon_credits=waste_record.carbon_credit_generated
+            carbon_credits=waste_record.carbon_credit_generated,
         )
 
         return waste_record
@@ -91,7 +89,7 @@ class WasteService:
         organization_id: Optional[UUID] = None,
         waste_type: Optional[str] = None,
         skip: int = 0,
-        limit: int = 100
+        limit: int = 100,
     ) -> list[WasteRecord]:
         """Get waste records with filters."""
         query = select(WasteRecord).where(WasteRecord.deleted_at.is_(None))
@@ -109,24 +107,16 @@ class WasteService:
         return list(result.scalars().all())
 
     @staticmethod
-    async def get_waste_record_by_id(
-        db: AsyncSession,
-        waste_id: UUID
-    ) -> Optional[WasteRecord]:
+    async def get_waste_record_by_id(db: AsyncSession, waste_id: UUID) -> Optional[WasteRecord]:
         """Get waste record by ID."""
         result = await db.execute(
-            select(WasteRecord).where(
-                WasteRecord.id == waste_id,
-                WasteRecord.deleted_at.is_(None)
-            )
+            select(WasteRecord).where(WasteRecord.id == waste_id, WasteRecord.deleted_at.is_(None))
         )
         return result.scalar_one_or_none()
 
     @staticmethod
     async def update_waste_record(
-        db: AsyncSession,
-        waste_id: UUID,
-        **update_fields
+        db: AsyncSession, waste_id: UUID, **update_fields
     ) -> Optional[WasteRecord]:
         """Update waste record."""
         waste_record = await WasteService.get_waste_record_by_id(db, waste_id)
@@ -146,10 +136,7 @@ class WasteService:
 
     @staticmethod
     async def verify_waste_record(
-        db: AsyncSession,
-        waste_id: UUID,
-        verification_id: UUID,
-        verified_by: UUID
+        db: AsyncSession, waste_id: UUID, verification_id: UUID, verified_by: UUID
     ) -> Optional[WasteRecord]:
         """Verify waste record."""
         waste_record = await WasteService.get_waste_record_by_id(db, waste_id)

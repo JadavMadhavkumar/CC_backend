@@ -2,7 +2,6 @@
 Unit tests for Formula Engine.
 """
 
-import pytest
 from app.formula_engine.base import (
     FormulaEngine,
     CalculationInput,
@@ -10,7 +9,7 @@ from app.formula_engine.base import (
     PlasticWasteRecyclingFormula,
     AgriculturalWasteFormula,
     BiocharFormula,
-    FormulaCategory
+    FormulaCategory,
 )
 
 
@@ -24,12 +23,9 @@ class TestGeneralCarbonCreditFormula:
             quantity=1000,
             unit="kg",
             disposal_method_baseline="landfill",
-            disposal_method_project="recycling"
+            disposal_method_project="recycling",
         )
-        emission_factors = {
-            "EF_baseline": 6.0,
-            "EF_project": 0.5
-        }
+        emission_factors = {"EF_baseline": 6.0, "EF_project": 0.5}
 
         result = formula.calculate(input_params, emission_factors)
 
@@ -42,10 +38,7 @@ class TestGeneralCarbonCreditFormula:
     def test_validate_input_invalid(self):
         """Test input validation with invalid data."""
         formula = GeneralCarbonCreditFormula()
-        input_params = CalculationInput(
-            quantity=0,
-            unit="kg"
-        )
+        input_params = CalculationInput(quantity=0, unit="kg")
 
         errors = formula.validate_input(input_params)
         assert len(errors) > 0
@@ -58,15 +51,9 @@ class TestPlasticWasteRecyclingFormula:
         """Test PET plastic recycling carbon credit calculation."""
         formula = PlasticWasteRecyclingFormula()
         input_params = CalculationInput(
-            quantity=1000,
-            unit="kg",
-            plastic_type="pet",
-            processing_method="recycling"
+            quantity=1000, unit="kg", plastic_type="pet", processing_method="recycling"
         )
-        emission_factors = {
-            "EF_PET_landfill": 6.4,
-            "EF_PET_recycling": 0.8
-        }
+        emission_factors = {"EF_PET_landfill": 6.4, "EF_PET_recycling": 0.8}
 
         result = formula.calculate(input_params, emission_factors)
 
@@ -77,15 +64,8 @@ class TestPlasticWasteRecyclingFormula:
     def test_calculate_hdpe_recycling(self):
         """Test HDPE plastic recycling carbon credit calculation."""
         formula = PlasticWasteRecyclingFormula()
-        input_params = CalculationInput(
-            quantity=500,
-            unit="kg",
-            plastic_type="hdpe"
-        )
-        emission_factors = {
-            "EF_HDPE_landfill": 7.2,
-            "EF_HDPE_recycling": 0.6
-        }
+        input_params = CalculationInput(quantity=500, unit="kg", plastic_type="hdpe")
+        emission_factors = {"EF_HDPE_landfill": 7.2, "EF_HDPE_recycling": 0.6}
 
         result = formula.calculate(input_params, emission_factors)
 
@@ -99,15 +79,8 @@ class TestAgriculturalWasteFormula:
     def test_calculate_crop_residue(self):
         """Test crop residue management carbon credit calculation."""
         formula = AgriculturalWasteFormula()
-        input_params = CalculationInput(
-            quantity=1000,
-            unit="kg",
-            waste_type="crop_residue"
-        )
-        emission_factors = {
-            "EF_burning": 2.8,
-            "EF_mulching": 0.2
-        }
+        input_params = CalculationInput(quantity=1000, unit="kg", waste_type="crop_residue")
+        emission_factors = {"EF_burning": 2.8, "EF_mulching": 0.2}
 
         result = formula.calculate(input_params, emission_factors)
 
@@ -117,15 +90,8 @@ class TestAgriculturalWasteFormula:
     def test_calculate_rice_straw(self):
         """Test rice straw biochar carbon credit calculation."""
         formula = AgriculturalWasteFormula()
-        input_params = CalculationInput(
-            quantity=1000,
-            unit="kg",
-            waste_type="rice_straw"
-        )
-        emission_factors = {
-            "EF_strawburning": 2.5,
-            "EF_biochar": 0.1
-        }
+        input_params = CalculationInput(quantity=1000, unit="kg", waste_type="rice_straw")
+        emission_factors = {"EF_strawburning": 2.5, "EF_biochar": 0.1}
 
         result = formula.calculate(input_params, emission_factors)
 
@@ -139,13 +105,9 @@ class TestBiocharFormula:
         """Test biochar carbon credit calculation."""
         formula = BiocharFormula()
         input_params = CalculationInput(
-            quantity=1000,
-            biochar_yield_percentage=30.0,
-            carbon_content=70.0
+            quantity=1000, biochar_yield_percentage=30.0, carbon_content=70.0
         )
-        emission_factors = {
-            "EF_soilimprovement": 0.05
-        }
+        emission_factors = {"EF_soilimprovement": 0.05}
 
         result = formula.calculate(input_params, emission_factors)
 
@@ -158,9 +120,7 @@ class TestBiocharFormula:
         """Test biochar carbon captured calculation."""
         formula = BiocharFormula()
         input_params = CalculationInput(
-            quantity=1000,
-            biochar_yield_percentage=30.0,
-            carbon_content=70.0
+            quantity=1000, biochar_yield_percentage=30.0, carbon_content=70.0
         )
         emission_factors = {"EF_soilimprovement": 0.05}
 
@@ -195,7 +155,7 @@ class TestFormulaEngine:
             plastic_type="pet",
             quantity=1000,
             unit="kg",
-            processing_method="recycling"
+            processing_method="recycling",
         )
 
         assert result.is_valid is True
@@ -206,9 +166,7 @@ class TestFormulaEngine:
         engine = FormulaEngine()
 
         result = engine.calculate_biochar_credit(
-            feedstock_quantity=1000,
-            biochar_yield=30.0,
-            carbon_content=70.0
+            feedstock_quantity=1000, biochar_yield=30.0, carbon_content=70.0
         )
 
         assert result.is_valid is True
@@ -218,10 +176,7 @@ class TestFormulaEngine:
         """Test registering custom emission factors for a region."""
         engine = FormulaEngine()
 
-        custom_factors = {
-            "EF_landfill": 5.0,
-            "EF_recycling": 0.3
-        }
+        custom_factors = {"EF_landfill": 5.0, "EF_recycling": 0.3}
 
         engine.register_emission_factors("custom_region", custom_factors)
 

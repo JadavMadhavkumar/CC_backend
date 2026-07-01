@@ -3,24 +3,6 @@ Unit test configuration - no database required.
 """
 
 import pytest
-import sys
-from unittest.mock import MagicMock
-
-# Mock database before importing app
-sys.modules['sqlalchemy'] = MagicMock()
-sys.modules['sqlalchemy.ext'] = MagicMock()
-sys.modules['sqlalchemy.ext.asyncio'] = MagicMock()
-
-# Mock pydantic postgres dsn
-import pydantic
-original = pydantic.PostgresDsn
-
-
-class MockPostgresDsn(str):
-    pass
-
-
-pydantic.PostgresDsn = MockPostgresDsn
 
 
 @pytest.fixture(autouse=True)
